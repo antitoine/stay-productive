@@ -1,55 +1,59 @@
-const TITLE_OFF = "Stay Productive is Off";
-const TITLE_ON = "Stay Productive is On";
-const APPLICABLE_PROTOCOLS = ["http:", "https:"];
+const TITLE_OFF = 'Stay Productive is Off';
+const TITLE_ON = 'Stay Productive is On';
+const APPLICABLE_PROTOCOLS = ['http:', 'https:'];
 const APPLICABLE_URL_WITH_STYLES = {
-  "facebook.com": "/css/facebook.css",
-  "twitter.com": "/css/twitter.css"
+  'facebook.com': '/css/facebook.css',
+  'twitter.com': '/css/twitter.css'
 };
 
-var tabIdWithStyles = {};
+let tabIdStates = {};
 
+/*
+ Set the action's title and icon to off.
+ */
 function setOff(tab) {
-  browser.pageAction.setIcon({tabId: tab.id, path: "icons/do_not_disturb_off_white.svg"});
+  browser.pageAction.setIcon({tabId: tab.id, path: 'icons/do_not_disturb_off.svg'});
   browser.pageAction.setTitle({tabId: tab.id, title: TITLE_OFF});
-  browser.tabs.removeCSS({file: tabIdWithStyles[tab.id].style});
 }
 
 function setOn(tab) {
-  browser.pageAction.setIcon({tabId: tab.id, path: "icons/do_not_disturb_on_white.svg"});
+  browser.pageAction.setIcon({tabId: tab.id, path: 'icons/do_not_disturb_on.svg'});
   browser.pageAction.setTitle({tabId: tab.id, title: TITLE_ON});
-  browser.tabs.insertCSS({file: tabIdWithStyles[tab.id].style});
 }
 
 /*
-Toggle CSS: based on the current title, insert or remove the CSS.
-Update the page action's title and icon to reflect its state.
-*/
+ Toggle: based on the current state of the tab, insert or remove the CSS.
+ Update the page action's title and icon to reflect its state.
+ */
 function toggle(tab) {
-  if (tabIdWithStyles[tab.id.toString()].active) {
-    tabIdWithStyles[tab.id.toString()].active = false;
+  let tabIdKey = tab.id.toString();
+  if (tabIdStates[tabIdKey].active) {
+    tabIdStates[tabIdKey].active = false;
     setOff(tab);
+    browser.tabs.removeCSS({file: tabIdStates[tab.id].style}).catch((reason) => console.warn('No CSS file to remove', reason));
   } else {
-    tabIdWithStyles[tab.id.toString()].active = true;
+    tabIdStates[tabIdKey].active = true;
     setOn(tab);
+    browser.tabs.insertCSS({file: tabIdStates[tab.id].style}).catch((reason) => console.warn('Unable to add CSS file', reason));
   }
 }
 
 /*
-Returns true only if the URL's protocol is in APPLICABLE_PROTOCOLS.
-*/
+ Returns true only if the URL's protocol is in APPLICABLE_PROTOCOLS.
+ */
 function protocolIsApplicable(url) {
-  var anchor =  document.createElement('a');
+  let anchor = document.createElement('a');
   anchor.href = url;
   return APPLICABLE_PROTOCOLS.includes(anchor.protocol);
 }
 
 /*
-Returns the path to the stylesheet to apply if exist from APPLICABLE_URL_WITH_STYLES, else returns false.
+ Returns the path to the stylesheet to apply if exist from APPLICABLE_URL_WITH_STYLES, else returns false.
  */
 function urlHasStyleToApply(url) {
-  var anchor =  document.createElement('a');
+  let anchor = document.createElement('a');
   anchor.href = url;
-  var domain = Object.keys(APPLICABLE_URL_WITH_STYLES).find((domain) => anchor.hostname.endsWith(domain));
+  let domain = Object.keys(APPLICABLE_URL_WITH_STYLES).find((domain) => anchor.hostname.endsWith(domain));
   if (domain !== undefined) {
     return APPLICABLE_URL_WITH_STYLES[domain];
   }
@@ -57,39 +61,35 @@ function urlHasStyleToApply(url) {
 }
 
 /*
-Initialize the page action: set icon and title, then show.
-*/
+ Initialize the page action: set icon and title, then show.
+ */
 function initializePageAction(tab) {
   if (protocolIsApplicable(tab.url)) {
-    console.log(tabIdWithStyles);
-    console.log('Tab Id: ' + tab.id);
-    if (Object.keys(tabIdWithStyles).includes(tab.id.toString())) {
+    if (Object.keys(tabIdStates).includes(tab.id.toString())) {
       // Set the current state
-      console.log('Found, and active ?' + tabIdWithStyles[tab.id.toString()].active);
-      if (tabIdWithStyles[tab.id.toString()].active) {
+      if (tabIdStates[tab.id.toString()].active) {
         setOn(tab);
       } else {
         setOff(tab);
       }
       browser.pageAction.show(tab.id);
     } else {
-      console.log('Not found');
       // Initialize
-      var style = urlHasStyleToApply(tab.url);
+      let style = urlHasStyleToApply(tab.url);
       if (style) {
-        browser.pageAction.setIcon({tabId: tab.id, path: "icons/do_not_disturb_off_white.svg"});
+        browser.pageAction.setIcon({tabId: tab.id, path: 'icons/do_not_disturb_off.svg'});
         browser.pageAction.setTitle({tabId: tab.id, title: TITLE_OFF});
         browser.pageAction.show(tab.id);
-        tabIdWithStyles[tab.id.toString()] = {style: style, active: false};
+        tabIdStates[tab.id.toString()] = {style: style, active: false};
       }
     }
   }
 }
 
 /*
-When first loaded, initialize the page action for all tabs.
-*/
-var gettingAllTabs = browser.tabs.query({});
+ When first loaded, initialize the page action for all tabs.
+ */
+let gettingAllTabs = browser.tabs.query({});
 gettingAllTabs.then((tabs) => {
   for (tab of tabs) {
     initializePageAction(tab);
@@ -97,21 +97,16 @@ gettingAllTabs.then((tabs) => {
 });
 
 /*
-Each time a tab is updated, reset the page action for that tab.
-*/
-browser.tabs.onUpdated.addListener((id, changeInfo, tab) => {
-  initializePageAction(tab);
-});
-
-/*
- When a tab is close, we remove his state of the tabIdWithStyles
+ Each time a tab is updated, reset the page action for that tab.
  */
-browser.tabs.onRemoved.addListener((id) => {
-  delete tabIdWithStyles[id.toString()]
-});
+browser.tabs.onUpdated.addListener((id, changeInfo, tab) => initializePageAction(tab));
 
 /*
-Toggle CSS when the page action is clicked.
-*/
-browser.pageAction.onClicked.addListener(toggle);
+ When a tab is close, we remove his state of the tabIdStates
+ */
+browser.tabs.onRemoved.addListener((id) => delete tabIdStates[id.toString()]);
 
+/*
+ Toggle CSS when the page action is clicked.
+ */
+browser.pageAction.onClicked.addListener(toggle);

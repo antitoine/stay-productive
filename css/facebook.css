@@ -2,5 +2,5 @@ div[id^="topnews_main_stream"],
 div[id^="mostrecent_main_stream"],
 div[id^="pagelet_home_stream"],
 div[id^="pagelet_trending_tags_and_topics"] {
-    display: none;
+  display: none;
 }
