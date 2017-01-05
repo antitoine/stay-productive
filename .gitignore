@@ -1,1 +1,3 @@
-.idea
+.idea/
+.web-extension-id
+web-ext-artifacts/
