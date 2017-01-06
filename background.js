@@ -12,13 +12,13 @@ let tabIdStates = {};
  Set the action's title and icon to off.
  */
 function setOff(tab) {
-  browser.pageAction.setIcon({tabId: tab.id, path: 'icons/do_not_disturb_off.svg'});
-  browser.pageAction.setTitle({tabId: tab.id, title: TITLE_OFF});
+  chrome.pageAction.setIcon({tabId: tab.id, path: 'icons/do_not_disturb_off.svg'});
+  chrome.pageAction.setTitle({tabId: tab.id, title: TITLE_OFF});
 }
 
 function setOn(tab) {
-  browser.pageAction.setIcon({tabId: tab.id, path: 'icons/do_not_disturb_on.svg'});
-  browser.pageAction.setTitle({tabId: tab.id, title: TITLE_ON});
+  chrome.pageAction.setIcon({tabId: tab.id, path: 'icons/do_not_disturb_on.svg'});
+  chrome.pageAction.setTitle({tabId: tab.id, title: TITLE_ON});
 }
 
 /*
@@ -30,11 +30,11 @@ function toggle(tab) {
   if (tabIdStates[tabIdKey].active) {
     tabIdStates[tabIdKey].active = false;
     setOff(tab);
-    browser.tabs.removeCSS({file: tabIdStates[tab.id].style}).catch((reason) => console.warn('No CSS file to remove', reason));
+    chrome.tabs.reload(tab.id);
   } else {
     tabIdStates[tabIdKey].active = true;
     setOn(tab);
-    browser.tabs.insertCSS({file: tabIdStates[tab.id].style}).catch((reason) => console.warn('Unable to add CSS file', reason));
+    chrome.tabs.insertCSS(tab.id, {file: tabIdStates[tab.id].style});
   }
 }
 
@@ -72,14 +72,14 @@ function initializePageAction(tab) {
       } else {
         setOff(tab);
       }
-      browser.pageAction.show(tab.id);
+      chrome.pageAction.show(tab.id);
     } else {
       // Initialize
       let style = urlHasStyleToApply(tab.url);
       if (style) {
-        browser.pageAction.setIcon({tabId: tab.id, path: 'icons/do_not_disturb_off.svg'});
-        browser.pageAction.setTitle({tabId: tab.id, title: TITLE_OFF});
-        browser.pageAction.show(tab.id);
+        chrome.pageAction.setIcon({tabId: tab.id, path: 'icons/do_not_disturb_off.svg'});
+        chrome.pageAction.setTitle({tabId: tab.id, title: TITLE_OFF});
+        chrome.pageAction.show(tab.id);
         tabIdStates[tab.id.toString()] = {style: style, active: false};
       }
     }
@@ -89,8 +89,7 @@ function initializePageAction(tab) {
 /*
  When first loaded, initialize the page action for all tabs.
  */
-let gettingAllTabs = browser.tabs.query({});
-gettingAllTabs.then((tabs) => {
+chrome.tabs.query({}, (tabs) => {
   for (let tab of tabs) {
     initializePageAction(tab);
   }
@@ -99,14 +98,14 @@ gettingAllTabs.then((tabs) => {
 /*
  Each time a tab is updated, reset the page action for that tab.
  */
-browser.tabs.onUpdated.addListener((id, changeInfo, tab) => initializePageAction(tab));
+chrome.tabs.onUpdated.addListener((id, changeInfo, tab) => initializePageAction(tab));
 
 /*
  When a tab is close, we remove his state of the tabIdStates
  */
-browser.tabs.onRemoved.addListener((id) => delete tabIdStates[id.toString()]);
+chrome.tabs.onRemoved.addListener((id) => delete tabIdStates[id.toString()]);
 
 /*
  Toggle CSS when the page action is clicked.
  */
-browser.pageAction.onClicked.addListener(toggle);
+chrome.pageAction.onClicked.addListener(toggle);
