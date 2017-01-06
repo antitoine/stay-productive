@@ -30,7 +30,6 @@ function setOff(tab, properties = {}) {
   if (properties.hasOwnProperty('mute') && properties.mute) {
     chrome.tabs.update(tab.id, {muted: false});
   }
-  chrome.tabs.reload(tab.id);
 }
 
 /**
@@ -60,6 +59,7 @@ function toggle(tab) {
   if (tabIdStates[tabIdKey].active) {
     tabIdStates[tabIdKey].active = false;
     setOff(tab, properties);
+    chrome.tabs.reload(tab.id);
   } else {
     tabIdStates[tabIdKey].active = true;
     setOn(tab, properties);
