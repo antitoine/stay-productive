@@ -1,87 +1,121 @@
 const TITLE_OFF = 'Stay Productive is Off';
 const TITLE_ON = 'Stay Productive is On';
+const ICON_ON_PATH = 'icons/do_not_disturb_on.svg';
+const ICON_OFF_PATH = 'icons/do_not_disturb_off.svg';
 const APPLICABLE_PROTOCOLS = ['http:', 'https:'];
-const APPLICABLE_URL_WITH_STYLES = {
-  'facebook.com': '/css/facebook.css',
-  'twitter.com': '/css/twitter.css'
+const APPLICABLE_URL = {
+  'facebook.com': {
+    css: '/css/facebook.css',
+    mute: true
+  },
+  'twitter.com': {
+    css: '/css/twitter.css',
+    mute: true
+  }
 };
 
+/*
+ Contain all states of tabs where rules can be applied
+ */
 let tabIdStates = {};
 
-/*
- Set the action's title and icon to off.
+/**
+ * Set the action's title and icon to off.
+ * @param tab to apply changes
+ * @param properties if properties given try to remove them
  */
-function setOff(tab) {
-  chrome.pageAction.setIcon({tabId: tab.id, path: 'icons/do_not_disturb_off.svg'});
+function setOff(tab, properties = {}) {
+  chrome.pageAction.setIcon({tabId: tab.id, path: ICON_OFF_PATH});
   chrome.pageAction.setTitle({tabId: tab.id, title: TITLE_OFF});
+  if (properties.hasOwnProperty('mute') && properties.mute) {
+    chrome.tabs.update(tab.id, {muted: false});
+  }
+  chrome.tabs.reload(tab.id);
 }
 
-function setOn(tab) {
-  chrome.pageAction.setIcon({tabId: tab.id, path: 'icons/do_not_disturb_on.svg'});
-  chrome.pageAction.setTitle({tabId: tab.id, title: TITLE_ON});
-}
-
-/*
- Toggle: based on the current state of the tab, insert or remove the CSS.
- Update the page action's title and icon to reflect its state.
+/**
+ * Set the action's title and icon to on.
+ * @param tab to apply changes
+ * @param properties if properties given try to add them
  */
-function toggle(tab) {
-  let tabIdKey = tab.id.toString();
-  if (tabIdStates[tabIdKey].active) {
-    tabIdStates[tabIdKey].active = false;
-    setOff(tab);
-    chrome.tabs.reload(tab.id);
-  } else {
-    tabIdStates[tabIdKey].active = true;
-    setOn(tab);
-    chrome.tabs.insertCSS(tab.id, {file: tabIdStates[tab.id].style});
+function setOn(tab, properties = {}) {
+  chrome.pageAction.setIcon({tabId: tab.id, path: ICON_ON_PATH});
+  chrome.pageAction.setTitle({tabId: tab.id, title: TITLE_ON});
+  if (properties.hasOwnProperty('css')) {
+    chrome.tabs.insertCSS(tab.id, {file: tabIdStates[tab.id].properties.css});
+  }
+  if (properties.hasOwnProperty('mute') && properties.mute) {
+    chrome.tabs.update(tab.id, {muted: true});
   }
 }
 
-/*
- Returns true only if the URL's protocol is in APPLICABLE_PROTOCOLS.
+/**
+ * Toggle: based on the current state of the tab, insert or remove the properties.
+ * Update the page action's title and icon to reflect its state.
+ * @param tab to apply changes
  */
-function protocolIsApplicable(url) {
-  let anchor = document.createElement('a');
-  anchor.href = url;
-  return APPLICABLE_PROTOCOLS.includes(anchor.protocol);
+function toggle(tab) {
+  let tabIdKey = tab.id.toString();
+  let properties = tabIdStates[tabIdKey].properties;
+  if (tabIdStates[tabIdKey].active) {
+    tabIdStates[tabIdKey].active = false;
+    setOff(tab, properties);
+  } else {
+    tabIdStates[tabIdKey].active = true;
+    setOn(tab, properties);
+  }
 }
 
-/*
- Returns the path to the stylesheet to apply if exist from APPLICABLE_URL_WITH_STYLES, else returns false.
+/**
+ * Returns the properties to apply if exist from APPLICABLE_URL (check also protocol with
+ * APPLICABLE_PROTOCOLS), else returns false.
+ * @param url the url of the current page open
+ * @returns {string, boolean} properties to apply if there is, else false
  */
 function urlHasStyleToApply(url) {
   let anchor = document.createElement('a');
   anchor.href = url;
-  let domain = Object.keys(APPLICABLE_URL_WITH_STYLES).find((domain) => anchor.hostname.endsWith(domain));
-  if (domain !== undefined) {
-    return APPLICABLE_URL_WITH_STYLES[domain];
+  if (APPLICABLE_PROTOCOLS.includes(anchor.protocol)) {
+    let domain = Object.keys(APPLICABLE_URL).find((domain) => anchor.hostname.endsWith(domain));
+    if (domain !== undefined) {
+      return APPLICABLE_URL[domain];
+    }
   }
   return false;
 }
 
-/*
- Initialize the page action: set icon and title, then show.
+/**
+ * If the given tab have a rule to apply: initialize the page action (set icon and title, then show)
+ * @param tab
  */
 function initializePageAction(tab) {
-  if (protocolIsApplicable(tab.url)) {
-    if (Object.keys(tabIdStates).includes(tab.id.toString())) {
+  // We check first if the url have a CSS to apply
+  let properties = urlHasStyleToApply(tab.url);
+  if (properties) {
+
+    let tabIdKey = tab.id.toString();
+
+    // If the tab have already a rule applied
+    if (Object.keys(tabIdStates).includes(tabIdKey)) {
+
+      let properties = tabIdStates[tabIdKey].properties;
+
       // Set the current state
-      if (tabIdStates[tab.id.toString()].active) {
-        setOn(tab);
+      if (tabIdStates[tabIdKey].active) {
+        setOn(tab, properties);
       } else {
         setOff(tab);
       }
       chrome.pageAction.show(tab.id);
+
+    // Initialize
     } else {
-      // Initialize
-      let style = urlHasStyleToApply(tab.url);
-      if (style) {
-        chrome.pageAction.setIcon({tabId: tab.id, path: 'icons/do_not_disturb_off.svg'});
-        chrome.pageAction.setTitle({tabId: tab.id, title: TITLE_OFF});
-        chrome.pageAction.show(tab.id);
-        tabIdStates[tab.id.toString()] = {style: style, active: false};
-      }
+      setOff(tab);
+      chrome.pageAction.show(tab.id);
+      tabIdStates[tabIdKey] = {
+        properties: properties,
+        active: false
+      };
     }
   }
 }

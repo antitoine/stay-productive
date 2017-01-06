@@ -1,6 +1,14 @@
+/* Feed */
 div[id^="topnews_main_stream"],
 div[id^="mostrecent_main_stream"],
 div[id^="pagelet_home_stream"],
-div[id^="pagelet_trending_tags_and_topics"] {
-  display: none;
+div[id^="pagelet_trending_tags_and_topics"],
+/* Counter next to Home link */
+a[id^="u_0_3"] > div[id^="u_0_k"],
+/* Right feed */
+div[id^="pagelet_ticker"] {
+  visibility: hidden;
+  height: 0;
+  width: 0;
+  overflow: scroll;
 }

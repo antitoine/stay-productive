@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3
+
+* Remove extra feed in Facebook (activity log) and counter next to Home link
+* Fix bug with Facebook keep refreshing
+* Mute tab when set on
+
 ## 0.2
 
 * Improve visibility of the icon
