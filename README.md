@@ -13,7 +13,11 @@ Inspired by [kill-fb-feed Add-on](https://github.com/Irio/kill-fb-feed)
 
 The addon is available here [addons.mozilla.org/addon/stay-productive](https://addons.mozilla.org/addon/stay-productive/)
 
-### Chrome, Opera, Safari, Edge
+### Chrome
+
+The extension is available here [chrome.google.com/webstore/detail/stay-productive](https://chrome.google.com/webstore/detail/stay-productive/clebechkjgkellfchpaofjljofclphbg)
+
+### Opera, Safari, Edge
 
 Available soon.
 
