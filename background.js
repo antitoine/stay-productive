@@ -128,10 +128,7 @@ gettingAllTabs.then((tabs) => {
  Each time a tab is updated, reset the page action for that tab.
  */
 browser.tabs.onUpdated.addListener((id, changeInfo, tab) => {
-  // Set state only when the update is done (call multiple times)
-  if (tab.hasOwnProperty('status') && tab.status === 'complete' && tab.hasOwnProperty('url')) {
-    initializePageAction(tab);
-  }
+  initializePageAction(tab);
 });
 
 /*
