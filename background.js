@@ -91,7 +91,7 @@ function initializePageAction(tab) {
  */
 let gettingAllTabs = browser.tabs.query({});
 gettingAllTabs.then((tabs) => {
-  for (tab of tabs) {
+  for (let tab of tabs) {
     initializePageAction(tab);
   }
 });
