@@ -6,6 +6,7 @@ const APPLICABLE_PROTOCOLS = ['http:', 'https:'];
 const APPLICABLE_URL = {
   'facebook.com': {
     css: '/css/facebook.css',
+    js: '/js/facebook.js',
     mute: true
   },
   'twitter.com': {
@@ -28,7 +29,7 @@ function setOff(tab, properties = {}) {
   browser.pageAction.setIcon({tabId: tab.id, path: ICON_OFF_PATH});
   browser.pageAction.setTitle({tabId: tab.id, title: TITLE_OFF});
   if (properties.hasOwnProperty('css')) {
-    browser.tabs.removeCSS({file: properties.css}).catch((reason) => console.warn('No CSS file to remove', reason));
+    browser.tabs.removeCSS(tab.id, {file: properties.css}).catch((reason) => console.warn('No CSS file to remove', reason));
   }
   if (properties.hasOwnProperty('mute') && properties.mute) {
     browser.tabs.update(tab.id, {muted: false});
@@ -44,7 +45,10 @@ function setOn(tab, properties = {}) {
   browser.pageAction.setIcon({tabId: tab.id, path: ICON_ON_PATH});
   browser.pageAction.setTitle({tabId: tab.id, title: TITLE_ON});
   if (properties.hasOwnProperty('css')) {
-    browser.tabs.insertCSS({file: tabIdStates[tab.id].properties.css}).catch((reason) => console.warn('Unable to add CSS file', reason));
+    browser.tabs.insertCSS(tab.id, {file: tabIdStates[tab.id].properties.css}).catch((reason) => console.warn('Unable to add CSS file', reason));
+  }
+  if (properties.hasOwnProperty('js')) {
+    browser.tabs.executeScript(tab.id, {file: properties.js}).catch((reason) => console.warn('Unable to add JS file', reason));
   }
   if (properties.hasOwnProperty('mute') && properties.mute) {
     browser.tabs.update(tab.id, {muted: true});
