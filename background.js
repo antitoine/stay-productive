@@ -5,10 +5,12 @@ const ICON_OFF_PATH = 'icons/do_not_disturb_off.svg';
 const APPLICABLE_PROTOCOLS = ['http:', 'https:'];
 const APPLICABLE_URL = {
   'facebook.com': {
-    css: '/css/facebook.css'
+    css: '/css/facebook.css',
+    mute: true
   },
   'twitter.com': {
-    css: '/css/twitter.css'
+    css: '/css/twitter.css',
+    mute: true
   }
 };
 
@@ -26,7 +28,10 @@ function setOff(tab, properties = {}) {
   browser.pageAction.setIcon({tabId: tab.id, path: ICON_OFF_PATH});
   browser.pageAction.setTitle({tabId: tab.id, title: TITLE_OFF});
   if (properties.hasOwnProperty('css')) {
-    browser.tabs.removeCSS({file: tabIdStates[tab.id].properties.css}).catch((reason) => console.warn('No CSS file to remove', reason));
+    browser.tabs.removeCSS({file: properties.css}).catch((reason) => console.warn('No CSS file to remove', reason));
+  }
+  if (properties.hasOwnProperty('mute') && properties.mute) {
+    browser.tabs.update(tab.id, {muted: false});
   }
 }
 
@@ -40,6 +45,9 @@ function setOn(tab, properties = {}) {
   browser.pageAction.setTitle({tabId: tab.id, title: TITLE_ON});
   if (properties.hasOwnProperty('css')) {
     browser.tabs.insertCSS({file: tabIdStates[tab.id].properties.css}).catch((reason) => console.warn('Unable to add CSS file', reason));
+  }
+  if (properties.hasOwnProperty('mute') && properties.mute) {
+    browser.tabs.update(tab.id, {muted: true});
   }
 }
 
