@@ -4,14 +4,18 @@ const ICON_ON_PATH = 'icons/do_not_disturb_on.svg';
 const ICON_OFF_PATH = 'icons/do_not_disturb_off.svg';
 const APPLICABLE_PROTOCOLS = ['http:', 'https:'];
 const APPLICABLE_URL = {
-  'facebook.com': {
+  '.facebook.com': {
     css: '/css/facebook.css',
     mute: true
   },
   'twitter.com': {
     css: '/css/twitter.css',
     mute: true
-  }
+  },
+  '.linkedin.com': {
+    css: '/css/linkedin.css',
+    mute: true
+  },
 };
 
 /*
