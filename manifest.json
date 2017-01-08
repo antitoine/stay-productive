@@ -22,7 +22,9 @@
   ],
 
   "icons": {
-    "48": "icon.png"
+    "48": "icon.png",
+    "64": "icon64.png",
+    "128": "icon128.png"
   }
 
 }
