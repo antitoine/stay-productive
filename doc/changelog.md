@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4 - No released yet
+
+* Add Linkedin (remove feed and mute tab)
+
 ## 0.3
 
 * Remove extra feed in Facebook (activity log) and counter next to Home link

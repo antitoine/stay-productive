@@ -1,6 +1,6 @@
 # Stay Productive
 
-This add-on injects CSS and Javascript to remove feed and notifications in Facebook and Twitter. You can choose to active or not this behavior directly on the page (next to the URL).
+This add-on injects CSS and Javascript to remove feed and notifications in Facebook, Twitter and Linkedin. You can choose to active or not this behavior directly on the page (next to the URL).
 
 <img src="doc/promotional/facebook-stay-productive-on-large.png?raw=true" alt="Stay productive promotional picture displaying Facebook without feed" title="Stay Productive"/>
 
