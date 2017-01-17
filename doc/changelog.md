@@ -3,6 +3,7 @@
 ## 0.4 - No released yet
 
 * Add Linkedin (remove feed and mute tab)
+* Reset tabs when window is closed (unmute)
 
 ## 0.3
 

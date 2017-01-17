@@ -144,9 +144,20 @@ browser.tabs.onUpdated.addListener((id, changeInfo, tab) => {
 });
 
 /*
- When a tab is close, we remove his state of the tabIdStates
+ When a tab is closed, we remove his state of the tabIdStates
  */
 browser.tabs.onRemoved.addListener((id) => delete tabIdStates[id.toString()]);
+
+/*
+ When the window is closed, we reset all tab to off
+ */
+browser.windows.onRemoved.addListener((id) => {
+  browser.windows.get(id, {populate: true}).then((window) => {
+    for (let tab of window.tabs) {
+      setOff(tab, tabIdStates[tab.id.toString()].properties);
+    }
+  });
+});
 
 /*
  Toggle CSS when the page action is clicked.
