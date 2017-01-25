@@ -39,7 +39,7 @@ The extension is available here [chrome.google.com/webstore/detail/stay-producti
 
 ### Opera
 
-The extension have been submitted and will be available in the Opera Add-ons store soon (to use it now, follow instructions of Safari and Edge installation).
+The addon is available here [addons.opera.com/en/extensions/details/stay-productive/](https://addons.opera.com/en/extensions/details/stay-productive/)
 
 ### Safari and Edge
 
