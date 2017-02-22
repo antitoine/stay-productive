@@ -154,7 +154,9 @@ gettingAllTabs.then((tabs) => {
  Each time a tab is updated, reset the page action for that tab.
  */
 browser.tabs.onUpdated.addListener((id, changeInfo, tab) => {
-  initializePageAction(tab);
+  if (!changeInfo.hasOwnProperty('mutedInfo')) {
+    initializePageAction(tab);
+  }
 });
 
 /*
