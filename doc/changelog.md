@@ -1,9 +1,10 @@
 # Changelog
 
-## 0.4 - No released yet
+## 0.4
 
-* Add Linkedin (remove feed and mute tab)
-* Reset tabs when window is closed (unmute)
+* Add new version of Linkedin (remove feed and mute tab)
+* Enable again Stay Productive correctly when tab is restored
+* Allow to enable sound of a tab even if the the addon behavior is set to on
 
 ## 0.3
 
