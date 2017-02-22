@@ -18,6 +18,8 @@ const APPLICABLE_URL = {
   },
 };
 
+const EXTENSION_ID = browser.i18n.getMessage('@@extension_id');
+
 /*
  Contain all states of tabs where rules can be applied
  */
@@ -29,13 +31,14 @@ let tabIdStates = {};
  * @param properties if properties given try to remove them
  */
 function setOff(tab, properties = {}) {
-  browser.pageAction.setIcon({tabId: tab.id, path: ICON_OFF_PATH});
-  browser.pageAction.setTitle({tabId: tab.id, title: TITLE_OFF});
+  let tabId = tab.id | tab;
+  browser.pageAction.setIcon({tabId: tabId, path: ICON_OFF_PATH});
+  browser.pageAction.setTitle({tabId: tabId, title: TITLE_OFF});
   if (properties.hasOwnProperty('css')) {
-    browser.tabs.removeCSS({file: properties.css}).catch((reason) => console.warn('No CSS file to remove', reason));
+    browser.tabs.removeCSS(tabId, {file: properties.css}).catch((reason) => console.info('No CSS file to remove', reason));
   }
   if (properties.hasOwnProperty('mute') && properties.mute) {
-    browser.tabs.update(tab.id, {muted: false});
+    browser.tabs.update(tabId, {muted: false});
   }
 }
 
@@ -45,13 +48,14 @@ function setOff(tab, properties = {}) {
  * @param properties if properties given try to add them
  */
 function setOn(tab, properties = {}) {
-  browser.pageAction.setIcon({tabId: tab.id, path: ICON_ON_PATH});
-  browser.pageAction.setTitle({tabId: tab.id, title: TITLE_ON});
+  let tabId = tab.id | tab;
+  browser.pageAction.setIcon({tabId: tabId, path: ICON_ON_PATH});
+  browser.pageAction.setTitle({tabId: tabId, title: TITLE_ON});
   if (properties.hasOwnProperty('css')) {
-    browser.tabs.insertCSS({file: tabIdStates[tab.id].properties.css}).catch((reason) => console.warn('Unable to add CSS file', reason));
+    browser.tabs.insertCSS(tabId, {file: tabIdStates[tabId].properties.css}).catch((reason) => console.info('Unable to add CSS file', reason));
   }
   if (properties.hasOwnProperty('mute') && properties.mute) {
-    browser.tabs.update(tab.id, {muted: true});
+    browser.tabs.update(tabId, {muted: true});
   }
 }
 
@@ -95,6 +99,7 @@ function urlHasStyleToApply(url) {
  * @param tab
  */
 function initializePageAction(tab) {
+
   // We check first if the url have a CSS to apply
   let properties = urlHasStyleToApply(tab.url);
   if (properties) {
@@ -108,7 +113,16 @@ function initializePageAction(tab) {
 
       // Set the current state
       if (tabIdStates[tabIdKey].active) {
+
         setOn(tab, properties);
+
+      // If the tab has previously muted by this extension, we also need to set again to on the all behavior
+      } else if (tab.hasOwnProperty('status') && tab.status === 'complete'
+        && tab.hasOwnProperty('mutedInfo') && tab.mutedInfo.muted
+        && tab.mutedInfo.hasOwnProperty('extensionId') && tab.mutedInfo.extensionId === EXTENSION_ID) {
+
+        setOn(tab, properties);
+
       } else {
         setOff(tab);
       }
@@ -146,15 +160,17 @@ browser.tabs.onUpdated.addListener((id, changeInfo, tab) => {
 /*
  When a tab is closed, we remove his state of the tabIdStates
  */
-browser.tabs.onRemoved.addListener((id) => delete tabIdStates[id.toString()]);
+browser.tabs.onRemoved.addListener((tabId, removeInfo) => {
+  delete tabIdStates[tabId];
+});
 
 /*
  When the window is closed, we reset all tab to off
  */
-browser.windows.onRemoved.addListener((id) => {
-  browser.windows.get(id, {populate: true}).then((window) => {
+browser.windows.onRemoved.addListener((windowId) => {
+  browser.windows.get(windowId, {populate: true}).then((window) => {
     for (let tab of window.tabs) {
-      setOff(tab, tabIdStates[tab.id.toString()].properties);
+      delete tabIdStates[tab.id.toString()];
     }
   });
 });
