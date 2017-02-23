@@ -4,15 +4,21 @@ const ICON_ON_PATH = 'icons/do_not_disturb_on.svg';
 const ICON_OFF_PATH = 'icons/do_not_disturb_off.svg';
 const APPLICABLE_PROTOCOLS = ['http:', 'https:'];
 const APPLICABLE_URL = {
-  'facebook.com': {
+  '.facebook.com': {
     css: '/css/facebook.css',
     mute: true
   },
   'twitter.com': {
     css: '/css/twitter.css',
     mute: true
-  }
+  },
+  '.linkedin.com': {
+    css: '/css/linkedin.css',
+    mute: true
+  },
 };
+
+const EXTENSION_ID = chrome.i18n.getMessage('@@extension_id');
 
 /*
  Contain all states of tabs where rules can be applied
@@ -25,10 +31,11 @@ let tabIdStates = {};
  * @param properties if properties given try to remove them
  */
 function setOff(tab, properties = {}) {
-  chrome.pageAction.setIcon({tabId: tab.id, path: ICON_OFF_PATH});
-  chrome.pageAction.setTitle({tabId: tab.id, title: TITLE_OFF});
+  let tabId = tab.id | tab;
+  chrome.pageAction.setIcon({tabId: tabId, path: ICON_OFF_PATH});
+  chrome.pageAction.setTitle({tabId: tabId, title: TITLE_OFF});
   if (properties.hasOwnProperty('mute') && properties.mute) {
-    chrome.tabs.update(tab.id, {muted: false});
+    chrome.tabs.update(tabId, {muted: false});
   }
 }
 
@@ -38,13 +45,14 @@ function setOff(tab, properties = {}) {
  * @param properties if properties given try to add them
  */
 function setOn(tab, properties = {}) {
-  chrome.pageAction.setIcon({tabId: tab.id, path: ICON_ON_PATH});
-  chrome.pageAction.setTitle({tabId: tab.id, title: TITLE_ON});
+  let tabId = tab.id | tab;
+  chrome.pageAction.setIcon({tabId: tabId, path: ICON_ON_PATH});
+  chrome.pageAction.setTitle({tabId: tabId, title: TITLE_ON});
   if (properties.hasOwnProperty('css')) {
-    chrome.tabs.insertCSS(tab.id, {file: tabIdStates[tab.id].properties.css});
+    chrome.tabs.insertCSS(tabId, {file: tabIdStates[tabId].properties.css});
   }
   if (properties.hasOwnProperty('mute') && properties.mute) {
-    chrome.tabs.update(tab.id, {muted: true});
+    chrome.tabs.update(tabId, {muted: true});
   }
 }
 
@@ -89,6 +97,7 @@ function urlHasStyleToApply(url) {
  * @param tab
  */
 function initializePageAction(tab) {
+
   // We check first if the url have a CSS to apply
   let properties = urlHasStyleToApply(tab.url);
   if (properties) {
@@ -102,7 +111,16 @@ function initializePageAction(tab) {
 
       // Set the current state
       if (tabIdStates[tabIdKey].active) {
+
         setOn(tab, properties);
+
+      // If the tab has previously muted by this extension, we also need to set again to on the all behavior
+      } else if (tab.hasOwnProperty('status') && tab.status === 'complete'
+        && tab.hasOwnProperty('mutedInfo') && tab.mutedInfo.muted
+        && tab.mutedInfo.hasOwnProperty('extensionId') && tab.mutedInfo.extensionId === EXTENSION_ID) {
+
+        setOn(tab, properties);
+
       } else {
         setOff(tab);
       }
@@ -132,12 +150,29 @@ chrome.tabs.query({}, (tabs) => {
 /*
  Each time a tab is updated, reset the page action for that tab.
  */
-chrome.tabs.onUpdated.addListener((id, changeInfo, tab) => initializePageAction(tab));
+chrome.tabs.onUpdated.addListener((id, changeInfo, tab) => {
+  if (!changeInfo.hasOwnProperty('mutedInfo')) {
+    initializePageAction(tab);
+  }
+});
 
 /*
- When a tab is close, we remove his state of the tabIdStates
+ When a tab is closed, we remove his state of the tabIdStates
  */
-chrome.tabs.onRemoved.addListener((id) => delete tabIdStates[id.toString()]);
+chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
+  delete tabIdStates[tabId];
+});
+
+/*
+ When the window is closed, we reset all tab to off
+ */
+chrome.windows.onRemoved.addListener((windowId) => {
+  chrome.windows.get(windowId, {populate: true}, (window) => {
+    for (let tab of window.tabs) {
+      delete tabIdStates[tab.id.toString()];
+    }
+  });
+});
 
 /*
  Toggle CSS when the page action is clicked.
