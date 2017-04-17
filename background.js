@@ -169,7 +169,8 @@ gettingAllTabs.then((tabs) => {
   /* Load settings */
   let configPromise = browser.storage.local.get('settings');
   configPromise.then((result) => {
-    settings = result.settings || {};
+    result = Array.isArray(result) ? result[0] : result;
+    let settings = result.settings || {};
     for (let tab of tabs) {
       initializePageAction(tab, settings);
     }
@@ -186,7 +187,8 @@ browser.tabs.onUpdated.addListener((id, changeInfo, tab) => {
     /* Load settings */
     let configPromise = browser.storage.local.get('settings');
     configPromise.then((result) => {
-      settings = result.settings || {};
+      result = Array.isArray(result) ? result[0] : result;
+      let settings =  result.settings || {};
       initializePageAction(tab, settings);
     }, (error) => {
       console.error('Error when accessing settings', error);

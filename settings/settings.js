@@ -26,6 +26,7 @@ function restoreSettings() {
   let configPromise = browser.storage.local.get('settings');
 
   configPromise.then((result) => {
+    result = Array.isArray(result) ? result[0] : result;
     let settings = result.settings || {};
     if (settings.hasOwnProperty(ENABLE_BY_DEFAULT_ID)) {
       document.getElementById(ENABLE_BY_DEFAULT_ID).checked = settings[ENABLE_BY_DEFAULT_ID];
