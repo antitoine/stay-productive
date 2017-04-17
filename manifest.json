@@ -3,7 +3,7 @@
   "description": "Remove feed and notifications from Facebook, Twitter, Linkedin ... To stay productive !",
   "manifest_version": 2,
   "name": "Stay Productive",
-  "version": "0.4",
+  "version": "0.5",
   "homepage_url": "https://github.com/antitoine/stay-productive",
 
   "background": {

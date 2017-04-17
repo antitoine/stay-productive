@@ -161,7 +161,6 @@ function initializePageAction(tab, settings) {
   }
 }
 
-
 /*
  When first loaded, initialize the page action for all tabs.
  */
