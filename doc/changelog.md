@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5
+
+* Add a settings page to select the default behavior
+
 ## 0.4
 
 * Add new version of Linkedin (remove feed and mute tab)
