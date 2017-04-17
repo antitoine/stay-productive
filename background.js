@@ -3,20 +3,26 @@ const TITLE_ON = 'Stay Productive is On';
 const ICON_ON_PATH = 'icons/do_not_disturb_on.svg';
 const ICON_OFF_PATH = 'icons/do_not_disturb_off.svg';
 const APPLICABLE_PROTOCOLS = ['http:', 'https:'];
-const APPLICABLE_URL = {
-  '.facebook.com': {
+const APPLICABLE_URL = [
+  {
+    key: 'facebook',
+    url: '.facebook.com',
     css: '/css/facebook.css',
     mute: true
   },
-  'twitter.com': {
+  {
+    key: 'twitter',
+    url: 'twitter.com',
     css: '/css/twitter.css',
     mute: true
   },
-  '.linkedin.com': {
+  {
+    key: 'linkedin',
+    url: '.linkedin.com',
     css: '/css/linkedin.css',
     mute: true
   },
-};
+];
 
 const EXTENSION_ID = browser.i18n.getMessage('@@extension_id');
 
@@ -52,7 +58,7 @@ function setOn(tab, properties = {}) {
   browser.pageAction.setIcon({tabId: tabId, path: ICON_ON_PATH});
   browser.pageAction.setTitle({tabId: tabId, title: TITLE_ON});
   if (properties.hasOwnProperty('css')) {
-    browser.tabs.insertCSS(tabId, {file: tabIdStates[tabId].properties.css}).catch((reason) => console.info('Unable to add CSS file', reason));
+    browser.tabs.insertCSS(tabId, {file: properties.css}).catch((reason) => console.info('Unable to add CSS file', reason));
   }
   if (properties.hasOwnProperty('mute') && properties.mute) {
     browser.tabs.update(tabId, {muted: true});
@@ -86,9 +92,9 @@ function urlHasStyleToApply(url) {
   let anchor = document.createElement('a');
   anchor.href = url;
   if (APPLICABLE_PROTOCOLS.includes(anchor.protocol)) {
-    let domain = Object.keys(APPLICABLE_URL).find((domain) => anchor.hostname.endsWith(domain));
-    if (domain !== undefined) {
-      return APPLICABLE_URL[domain];
+    let configFound = APPLICABLE_URL.find((config) => anchor.hostname.endsWith(config.url));
+    if (configFound !== undefined) {
+      return configFound;
     }
   }
   return false;
@@ -98,7 +104,7 @@ function urlHasStyleToApply(url) {
  * If the given tab have a rule to apply: initialize the page action (set icon and title, then show)
  * @param tab
  */
-function initializePageAction(tab) {
+function initializePageAction(tab, settings) {
 
   // We check first if the url have a CSS to apply
   let properties = urlHasStyleToApply(tab.url);
@@ -130,24 +136,47 @@ function initializePageAction(tab) {
 
     // Initialize
     } else {
-      setOff(tab);
-      browser.pageAction.show(tab.id);
-      tabIdStates[tabIdKey] = {
-        properties: properties,
-        active: false
-      };
+      if (settings &&
+        (
+        (settings.hasOwnProperty('enableDefault') && settings.enableDefault)
+        ||
+        (settings.hasOwnProperty(properties.key + 'EnableDefault') && settings[properties.key + 'EnableDefault'])
+        )
+      ) {
+        setOn(tab, properties);
+        browser.pageAction.show(tab.id);
+        tabIdStates[tabIdKey] = {
+          properties: properties,
+          active: true
+        };
+      } else {
+        setOff(tab);
+        browser.pageAction.show(tab.id);
+        tabIdStates[tabIdKey] = {
+          properties: properties,
+          active: false
+        };
+      }
     }
   }
 }
+
 
 /*
  When first loaded, initialize the page action for all tabs.
  */
 let gettingAllTabs = browser.tabs.query({});
 gettingAllTabs.then((tabs) => {
-  for (let tab of tabs) {
-    initializePageAction(tab);
-  }
+  /* Load settings */
+  let configPromise = browser.storage.local.get('settings');
+  configPromise.then((result) => {
+    settings = result.settings || {};
+    for (let tab of tabs) {
+      initializePageAction(tab, settings);
+    }
+  }, (error) => {
+    console.error('Error when accessing settings', error);
+  });
 });
 
 /*
@@ -155,7 +184,14 @@ gettingAllTabs.then((tabs) => {
  */
 browser.tabs.onUpdated.addListener((id, changeInfo, tab) => {
   if (!changeInfo.hasOwnProperty('mutedInfo')) {
-    initializePageAction(tab);
+    /* Load settings */
+    let configPromise = browser.storage.local.get('settings');
+    configPromise.then((result) => {
+      settings = result.settings || {};
+      initializePageAction(tab, settings);
+    }, (error) => {
+      console.error('Error when accessing settings', error);
+    });
   }
 });
 

@@ -1,53 +1,47 @@
 const FORM_ID = 'settingsForm';
 const ENABLE_BY_DEFAULT_ID = 'enableDefault';
 const ENABLE_BY_DEFAULT_CUSTOM = {
-  facebook: 'enableFacebook',
-  twitter: 'enableTwitter',
-  linkedin: 'enableLinkedin',
+  facebook: 'facebookEnableDefault',
+  twitter: 'twitterEnableDefault',
+  linkedin: 'linkedinEnableDefault',
 };
 
 function saveSettings(event) {
   event.preventDefault();
-  let config = {};
-  config[ENABLE_BY_DEFAULT_ID] = document.getElementById(ENABLE_BY_DEFAULT_ID).checked;
+  let settings = {};
+  settings[ENABLE_BY_DEFAULT_ID] = document.getElementById(ENABLE_BY_DEFAULT_ID).checked;
   for (let social in ENABLE_BY_DEFAULT_CUSTOM) {
     if (ENABLE_BY_DEFAULT_CUSTOM.hasOwnProperty(social)) {
       let elt = document.getElementById(ENABLE_BY_DEFAULT_CUSTOM[social]);
-      config[ENABLE_BY_DEFAULT_CUSTOM[social]] = elt.checked;
-      elt.disabled = config[ENABLE_BY_DEFAULT_ID];
+      settings[ENABLE_BY_DEFAULT_CUSTOM[social]] = elt.checked;
+      elt.disabled = settings[ENABLE_BY_DEFAULT_ID];
     }
   }
-  console.log('Save', config);
   browser.storage.local.set({
-    settings: config
+    settings: settings
   });
 }
 
 function restoreSettings() {
+  let configPromise = browser.storage.local.get('settings');
 
-  function setSettings(result) {
-    let config = result.settings || {};
-    console.log('Restore', config);
-    if (config.hasOwnProperty(ENABLE_BY_DEFAULT_ID)) {
-      document.getElementById(ENABLE_BY_DEFAULT_ID).checked = config[ENABLE_BY_DEFAULT_ID];
+  configPromise.then((result) => {
+    let settings = result.settings || {};
+    if (settings.hasOwnProperty(ENABLE_BY_DEFAULT_ID)) {
+      document.getElementById(ENABLE_BY_DEFAULT_ID).checked = settings[ENABLE_BY_DEFAULT_ID];
     }
     for (let social in ENABLE_BY_DEFAULT_CUSTOM) {
-      if (ENABLE_BY_DEFAULT_CUSTOM.hasOwnProperty(social) && config.hasOwnProperty(ENABLE_BY_DEFAULT_CUSTOM[social])) {
+      if (ENABLE_BY_DEFAULT_CUSTOM.hasOwnProperty(social) && settings.hasOwnProperty(ENABLE_BY_DEFAULT_CUSTOM[social])) {
         let elt = document.getElementById(ENABLE_BY_DEFAULT_CUSTOM[social]);
-        elt.checked = config[ENABLE_BY_DEFAULT_CUSTOM[social]];
-        if (config.hasOwnProperty(ENABLE_BY_DEFAULT_ID)) {
-          elt.disabled = config[ENABLE_BY_DEFAULT_ID];
+        elt.checked = settings[ENABLE_BY_DEFAULT_CUSTOM[social]];
+        if (settings.hasOwnProperty(ENABLE_BY_DEFAULT_ID)) {
+          elt.disabled = settings[ENABLE_BY_DEFAULT_ID];
         }
       }
     }
-  }
-
-  function onError(error) {
-    console.log(`Error: ${error}`);
-  }
-
-  let configPromise = browser.storage.local.get('settings');
-  configPromise.then(setSettings, onError);
+  }, (error) => {
+    console.error('Error when restoring settings', error);
+  });
 }
 
 // Restore settings
