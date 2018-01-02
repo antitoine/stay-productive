@@ -17,15 +17,13 @@ function saveSettings(event) {
       elt.disabled = settings[ENABLE_BY_DEFAULT_ID];
     }
   }
-  browser.storage.local.set({
+  chrome.storage.local.set({
     settings: settings
   });
 }
 
 function restoreSettings() {
-  let configPromise = browser.storage.local.get('settings');
-
-  configPromise.then((result) => {
+  chrome.storage.local.get('settings', (result) => {
     result = Array.isArray(result) ? result[0] : result;
     let settings = result.settings || {};
     if (settings.hasOwnProperty(ENABLE_BY_DEFAULT_ID)) {
@@ -40,8 +38,6 @@ function restoreSettings() {
         }
       }
     }
-  }, (error) => {
-    console.error('Error when restoring settings', error);
   });
 }
 
