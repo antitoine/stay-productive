@@ -55,7 +55,7 @@ function setOn(tab, properties = {}) {
   chrome.pageAction.setIcon({tabId: tabId, path: ICON_ON_PATH});
   chrome.pageAction.setTitle({tabId: tabId, title: TITLE_ON});
   if (properties.hasOwnProperty('css')) {
-    chrome.tabs.insertCSS(tabId, {file: tabIdStates[tabId].properties.css});
+    chrome.tabs.insertCSS(tabId, {file: properties.css});
   }
   if (properties.hasOwnProperty('mute') && properties.mute) {
     chrome.tabs.update(tabId, {muted: true});
