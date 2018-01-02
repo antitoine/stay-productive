@@ -1,0 +1,32 @@
+.form {
+  font: message-box;
+  color: #333;
+}
+
+.form {
+  line-height: 20px;
+  text-shadow: 0 1px 1px #fefffe;
+}
+
+.form-group {
+  border-top: 1px solid #c1c1c1;
+}
+
+.form > .form-group:first-child {
+  border-top: none;
+}
+
+.form-group > label,
+.form-group > input {
+  margin: 3px auto;
+}
+
+.form-group > label {
+  width: 25%;
+  display: inline-block;
+}
+
+.form-group > input {
+  text-align: left;
+  display: inline-block;
+}

@@ -3,20 +3,26 @@ const TITLE_ON = 'Stay Productive is On';
 const ICON_ON_PATH = 'icons/do_not_disturb_on.svg';
 const ICON_OFF_PATH = 'icons/do_not_disturb_off.svg';
 const APPLICABLE_PROTOCOLS = ['http:', 'https:'];
-const APPLICABLE_URL = {
-  '.facebook.com': {
+const APPLICABLE_URL = [
+  {
+    key: 'facebook',
+    url: '.facebook.com',
     css: '/css/facebook.css',
     mute: true
   },
-  'twitter.com': {
+  {
+    key: 'twitter',
+    url: 'twitter.com',
     css: '/css/twitter.css',
     mute: true
   },
-  '.linkedin.com': {
+  {
+    key: 'linkedin',
+    url: '.linkedin.com',
     css: '/css/linkedin.css',
     mute: true
   },
-};
+];
 
 const EXTENSION_ID = chrome.i18n.getMessage('@@extension_id');
 
@@ -84,9 +90,9 @@ function urlHasStyleToApply(url) {
   let anchor = document.createElement('a');
   anchor.href = url;
   if (APPLICABLE_PROTOCOLS.includes(anchor.protocol)) {
-    let domain = Object.keys(APPLICABLE_URL).find((domain) => anchor.hostname.endsWith(domain));
-    if (domain !== undefined) {
-      return APPLICABLE_URL[domain];
+    let configFound = APPLICABLE_URL.find((config) => anchor.hostname.endsWith(config.url));
+    if (configFound !== undefined) {
+      return configFound;
     }
   }
   return false;
@@ -96,7 +102,7 @@ function urlHasStyleToApply(url) {
  * If the given tab have a rule to apply: initialize the page action (set icon and title, then show)
  * @param tab
  */
-function initializePageAction(tab) {
+function initializePageAction(tab, settings) {
 
   // We check first if the url have a CSS to apply
   let properties = urlHasStyleToApply(tab.url);
@@ -128,12 +134,27 @@ function initializePageAction(tab) {
 
     // Initialize
     } else {
-      setOff(tab);
-      chrome.pageAction.show(tab.id);
-      tabIdStates[tabIdKey] = {
-        properties: properties,
-        active: false
-      };
+      if (settings &&
+        (
+        (settings.hasOwnProperty('enableDefault') && settings.enableDefault)
+        ||
+        (settings.hasOwnProperty(properties.key + 'EnableDefault') && settings[properties.key + 'EnableDefault'])
+        )
+      ) {
+        setOn(tab, properties);
+        chrome.pageAction.show(tab.id);
+        tabIdStates[tabIdKey] = {
+          properties: properties,
+          active: true
+        };
+      } else {
+        setOff(tab);
+        chrome.pageAction.show(tab.id);
+        tabIdStates[tabIdKey] = {
+          properties: properties,
+          active: false
+        };
+      }
     }
   }
 }
@@ -142,9 +163,14 @@ function initializePageAction(tab) {
  When first loaded, initialize the page action for all tabs.
  */
 chrome.tabs.query({}, (tabs) => {
-  for (let tab of tabs) {
-    initializePageAction(tab);
-  }
+  /* Load settings */
+  chrome.storage.local.get('settings', (result) => {
+    result = Array.isArray(result) ? result[0] : result;
+    let settings = result.settings || {};
+    for (let tab of tabs) {
+      initializePageAction(tab, settings);
+    }
+  });
 });
 
 /*
@@ -152,7 +178,12 @@ chrome.tabs.query({}, (tabs) => {
  */
 chrome.tabs.onUpdated.addListener((id, changeInfo, tab) => {
   if (!changeInfo.hasOwnProperty('mutedInfo')) {
-    initializePageAction(tab);
+    /* Load settings */
+    chrome.storage.local.get('settings', (result) => {
+      result = Array.isArray(result) ? result[0] : result;
+      let settings =  result.settings || {};
+      initializePageAction(tab, settings);
+    });
   }
 });
 
